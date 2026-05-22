@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.0/dist/htmx.min.js" defer></script>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><a href="/"
+          hx-get="/"
+          hx-target="main"
+          hx-push-url="true">{{.Config.Name}}</a></h1>
+    <nav>
+      <a href="/"
+         hx-get="/"
+         hx-target="main"
+         hx-push-url="true"
+         {{if eq .Active "home"}}aria-current="page"{{end}}>About</a>
+
+      <a href="/writing"
+         hx-get="/writing"
+         hx-target="main"
+         hx-push-url="true"
+         {{if eq .Active "writing"}}aria-current="page"{{end}}>Writing</a>
+
+      <a href="/misc"
+         hx-get="/misc"
+         hx-target="main"
+         hx-push-url="true"
+         {{if eq .Active "misc"}}aria-current="page"{{end}}>Misc</a>
+
+      <button id="theme-toggle" aria-label="Toggle light/dark mode">☀︎</button>
+    </nav>
+  </header>
+
+  <main id="main">
+    {{template "content" .}}
+  </main>
+
+  <footer>
+    <span>&copy; {{currentYear}} {{.Config.Name}}.</span>
+    <div class="footer-links">
+      {{if .Config.GitHubURL}}<a href="{{.Config.GitHubURL}}" target="_blank" rel="noopener">github</a>{{end}}
+      {{if .Config.LinkedInURL}}<a href="{{.Config.LinkedInURL}}" target="_blank" rel="noopener">linkedin</a>{{end}}
+      {{if .Config.ResumeFile}}<a href="/static/{{.Config.ResumeFile}}" target="_blank" rel="noopener">resume</a>{{end}}
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  const saved = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = saved ? saved === "dark" : prefersDark;
+
+  if (!isDark) document.documentElement.setAttribute("data-theme", "light");
+
+  const btn = document.getElementById("theme-toggle");
+
+  function applyTheme(dark) {
+    if (dark) {
+      document.documentElement.removeAttribute("data-theme");
+      btn.textContent = "☀︎";
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+      btn.textContent = "☽";
+    }
+  }
+
+  applyTheme(isDark);
+
+  btn.addEventListener("click", function () {
+    const currentlyDark = !document.documentElement.hasAttribute("data-theme");
+    const next = !currentlyDark;
+    localStorage.setItem("theme", next ? "dark" : "light");
+    applyTheme(next);
+  });
+
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    var title = e.detail.xhr.getResponseHeader('HX-Title');
+    if (title) document.title = title;
+    var path = window.location.pathname;
+    document.querySelectorAll('nav a').forEach(function (a) {
+      var href = a.getAttribute('href');
+      var active = href === '/' ? path === '/' : path.startsWith(href);
+      active ? a.setAttribute('aria-current', 'page')
+             : a.removeAttribute('aria-current');
+    });
+  });
+</script>
+</body>
+</html>
